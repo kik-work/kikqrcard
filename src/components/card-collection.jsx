@@ -79,9 +79,12 @@ export function CardCollection({
                   profession={card.profession}
                   phone={card.phone}
                   quote={card.quote}
+                  email={card.contactEmail}
+                  website={card.website}
                   bgGrad={card.bgGrad}
                   bgStyle={card.bgStyle}
                   pattern={card.pattern}
+                  design={card.design}
                   cardId={card._id}
                 />
               </div>
@@ -107,7 +110,7 @@ export function CardCollection({
                   </Link>
                 )}
                 <Link
-                  href="/payment/orders"
+                  href={`/payment/orders?card=${card.sourceCardId || card._id}`}
                   className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "px-3.5")}
                 >
                   <Package className="size-3.5" />

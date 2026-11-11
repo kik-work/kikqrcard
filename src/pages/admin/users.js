@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Search, ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
-import AdminShell from "@/components/admin-shell";
+import { AdminLayout } from "@/components/admin-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -74,20 +74,9 @@ function AdminUsers() {
     }
   };
 
-  if (!ready) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center gap-3">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Checking session...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="md:pl-64">
-      <AdminShell />
-      <main className="p-4 sm:p-6 lg:p-8">
-        <h1 className="text-2xl font-bold text-foreground">Users</h1>
+    <AdminLayout title="Users" ready={ready}>
+        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.025em] text-foreground sm:text-[2.125rem]">Users</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {users.length} user{users.length === 1 ? "" : "s"}
         </p>
@@ -103,7 +92,7 @@ function AdminUsers() {
           </Button>
         </form>
 
-        <div className="mt-4 rounded-lg border border-border">
+        <div className="mt-4 overflow-hidden rounded-[1.25rem] bg-card shadow-card [&_tbody_tr]:transition-colors [&_td]:px-4 [&_td]:py-3 [&_th]:h-11 [&_th]:px-4 [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-muted-foreground [&_thead]:bg-black/[0.025]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -192,8 +181,7 @@ function AdminUsers() {
             </TableBody>
           </Table>
         </div>
-      </main>
-    </div>
+    </AdminLayout>
   );
 }
 

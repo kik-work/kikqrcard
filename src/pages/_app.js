@@ -25,6 +25,7 @@ const notoSans = Noto_Sans({
   style: ["normal", "italic"],
   variable: "--font-noto-sans",
   display: "swap",
+  preload: false, // fallback face for glyphs Manrope lacks; never block first paint on it
 });
 
 const roboto = Roboto({
@@ -32,6 +33,7 @@ const roboto = Roboto({
   weight: ["400", "700"],
   variable: "--font-roboto",
   display: "swap",
+  preload: false,
 });
 
 function App({ Component, pageProps: { session, ...pageProps } }) {

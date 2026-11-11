@@ -1,20 +1,33 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import axios from "axios";
-import { ChevronRight, Download } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Download, Mail, MapPin, Phone, Globe, RefreshCw } from "lucide-react";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
-import { buildVCard } from "@/components/business-card";
+import { buildVCard, CardFront } from "@/components/business-card";
 import { Logo } from "@/components/logo";
 import { QR_LINK_ICONS } from "@/components/qr-link-icons";
-import {
-  getLinkHref,
-  getLinkSubtitle,
-  getLinkTitle,
-  normalizeQrConfig,
-} from "@/lib/qrConfigTypes";
-import { cn } from "@/lib/utils";
+import { getLinkHref, getLinkSubtitle, getLinkTitle, normalizeQrConfig } from "@/lib/qrConfigTypes";
+
+// The page every printed / shared QR code opens.
+// It is rendered on the server on every scan (no caching), so visitors always
+// see the owner's latest details, even on cards printed long ago.
+export async function getServerSideProps({ params, res }) {
+  const [{ default: clientPromise }, { findLiveCard }] = await Promise.all([
+    import("../../../lib/mongodb/config"),
+    import("../../../lib/publicCard"),
+  ]);
+
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+
+  try {
+    const client = await clientPromise;
+    const card = await findLiveCard(client.db("kikqrcard"), params.cardId);
+    if (!card) return { notFound: true };
+    return { props: { card } };
+  } catch (err) {
+    console.error("Public card load error:", err);
+    return { props: { card: null, failed: true } };
+  }
+}
 
 function downloadVCardFile(card) {
   const vcard = buildVCard({
@@ -37,84 +50,72 @@ function downloadVCardFile(card) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export default function PublicCardLanding() {
-  const router = useRouter();
-  const { cardId } = router.query;
-  const [card, setCard] = useState(null);
-  const [status, setStatus] = useState("loading");
+function QuickAction({ href, icon: Icon, label }) {
+  if (!href) return null;
+  const isWeb = /^https?:/i.test(href);
+  return (
+    <a
+      href={href}
+      {...(isWeb ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      className="flex flex-1 flex-col items-center gap-1.5 rounded-2xl bg-card px-2 py-3 text-xs font-medium text-card-foreground shadow-sm ring-1 ring-border transition-colors hover:bg-accent"
+    >
+      <Icon className="size-5 text-primary" />
+      {label}
+    </a>
+  );
+}
 
-  useEffect(() => {
-    if (!cardId) return;
-    let cancelled = false;
-
-    axios
-      .get(`/api/getCards/getcardbyid?id=${cardId}`)
-      .then((res) => {
-        if (cancelled) return;
-        setCard(res.data.card);
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (!cancelled) setStatus("notfound");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cardId]);
-
-  if (status === "loading") {
+export default function PublicCardLanding({ card, failed }) {
+  if (!card) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-muted-foreground">Loading card...</p>
-      </div>
-    );
-  }
-
-  if (status === "notfound" || !card) {
-    return (
-      <div className="flex h-screen items-center justify-center px-4 text-center">
+      <div className="flex min-h-screen items-center justify-center px-4 text-center">
         <p className="text-lg font-semibold text-foreground">
-          Card not found.
+          {failed ? "This card could not be loaded. Please scan again in a moment." : "Card not found."}
         </p>
       </div>
     );
   }
 
   const { links } = normalizeQrConfig(card.qrConfig);
-  const faceClass = cn(
-    "relative flex aspect-[1.586/1] w-full flex-col overflow-hidden rounded-[6%] p-[6%] text-white shadow-lg",
-    "bg-black",
-    card.bgGrad,
-    card.bgStyle,
-  );
+  const website = card.website && /^https?:\/\//i.test(card.website) ? card.website : "";
+  const updated = card.updatedAt
+    ? new Date(card.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+    : null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
-      <Seo title={card.name} path={`/c/${cardId}`} noIndex />
-      <div className="w-full max-w-sm space-y-6">
-        <div className={faceClass}>
-          <div className="absolute left-[6%] top-[6%]">
-            <Logo size="xxs" variant="on-dark" />
-          </div>
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <p className="text-2xl font-bold italic tracking-wide">{card.name}</p>
-            <p className="mt-1 text-sm text-white/70">{card.profession}</p>
-          </div>
-          {card.quote && (
-            <p className="text-center text-sm italic text-white/60">
-              &ldquo;{card.quote}&rdquo;
-            </p>
-          )}
-          <p className="pt-4 text-center text-[9px] font-light tracking-wide text-white/50">
-            &copy; 2025, KIK QRcards. All rights reserved.
-          </p>
+    <div className="min-h-screen bg-muted px-4 py-8">
+      <Seo title={card.name} path={`/c/${card.id}`} noIndex />
+      <div className="mx-auto w-full max-w-sm space-y-6">
+        <CardFront
+          design={card.design}
+          bgGrad={card.bgGrad}
+          bgStyle={card.bgStyle}
+          pattern={card.pattern}
+          name={card.name}
+          profession={card.profession}
+          phone={card.phone}
+          email={card.contactEmail}
+          website={card.website}
+        />
+
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{card.name}</h1>
+          {card.profession && <p className="mt-1 text-sm text-muted-foreground">{card.profession}</p>}
+          {card.quote && <p className="mt-3 text-sm italic text-muted-foreground">&ldquo;{card.quote}&rdquo;</p>}
         </div>
-        <Button
-          size="lg"
-          className="w-full gap-2"
-          onClick={() => downloadVCardFile(card)}
-        >
+
+        <div className="flex gap-2">
+          <QuickAction href={card.phone ? `tel:${card.phone}` : ""} icon={Phone} label="Call" />
+          <QuickAction href={card.contactEmail ? `mailto:${card.contactEmail}` : ""} icon={Mail} label="Email" />
+          <QuickAction href={website} icon={Globe} label="Website" />
+          <QuickAction
+            href={card.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.address)}` : ""}
+            icon={MapPin}
+            label="Map"
+          />
+        </div>
+
+        <Button size="lg" className="w-full gap-2" onClick={() => downloadVCardFile(card)}>
           <Download className="size-5" />
           Save Contact
         </Button>
@@ -135,12 +136,8 @@ export default function PublicCardLanding() {
                       <Icon className="size-5" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">
-                        {getLinkTitle(link)}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {getLinkSubtitle(link)}
-                      </span>
+                      <span className="block truncate text-sm font-semibold">{getLinkTitle(link)}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{getLinkSubtitle(link)}</span>
                     </span>
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                   </a>
@@ -149,6 +146,19 @@ export default function PublicCardLanding() {
             })}
           </ul>
         )}
+
+        <div className="space-y-3 pt-2 text-center">
+          {updated && (
+            <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <RefreshCw className="size-3" />
+              Live card · last updated {updated}
+            </p>
+          )}
+          <Link href="/" className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
+            <Logo size="xxs" />
+            Get your own smart card
+          </Link>
+        </div>
       </div>
     </div>
   );

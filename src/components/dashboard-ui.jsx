@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import {
@@ -77,7 +77,7 @@ export function EmptyState({ icon: Icon, title, message, action, className }) {
   return (
     <Surface
       className={cn(
-        "flex flex-col items-center justify-center gap-4 px-6 py-16 text-center",
+        "flex animate-page-in flex-col items-center justify-center gap-4 px-6 py-16 text-center",
         className,
       )}
     >
@@ -95,8 +95,11 @@ export function EmptyState({ icon: Icon, title, message, action, className }) {
 
 export function FullscreenStatus({ icon: Icon = Loader2, spin = true, title, message }) {
   return (
-    <div className="dashboard flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4 text-center">
-      <Icon className={cn("size-6 text-primary", spin && "animate-spin")} />
+    <div className="dashboard flex min-h-screen animate-page-in flex-col items-center justify-center gap-4 bg-background px-4 text-center">
+      <span className="relative flex size-14 items-center justify-center rounded-2xl bg-card shadow-card">
+        {spin && <span aria-hidden className="absolute inset-0 animate-ping-soft rounded-2xl bg-primary/15" />}
+        <Icon className={cn("relative size-6 text-primary", spin && "animate-spin")} />
+      </span>
       <div>
         <p className="text-base font-semibold text-foreground">{title}</p>
         {message && <p className="mt-1 text-sm text-muted-foreground">{message}</p>}
@@ -166,7 +169,12 @@ export function Meter({ value, label, className }) {
 }
 
 const STATUS_STYLES = {
-  placed: { label: "Placed", icon: CheckCircle2, className: "bg-ios-green/15 text-success" },
+  placed: { label: "Placed", icon: Clock, className: "bg-ios-blue/12 text-ios-blue" },
+  pending: { label: "Awaiting payment", icon: Clock, className: "bg-ios-orange/15 text-warning" },
+  confirmed: { label: "Confirmed", icon: CheckCircle2, className: "bg-ios-blue/12 text-ios-blue" },
+  printing: { label: "Printing", icon: Loader2, className: "bg-ios-orange/15 text-warning", spin: true },
+  shipped: { label: "Shipped", icon: CheckCircle2, className: "bg-primary/12 text-primary" },
+  delivered: { label: "Delivered", icon: CheckCircle2, className: "bg-ios-green/15 text-success" },
   completed: { label: "Completed", icon: CheckCircle2, className: "bg-ios-green/15 text-success" },
   initiated: { label: "Processing", icon: Loader2, className: "bg-ios-orange/15 text-warning", spin: true },
   failed: { label: "Failed", icon: XCircle, className: "bg-ios-red/12 text-destructive" },
@@ -300,16 +308,45 @@ export function ListSkeleton({ rows = 3 }) {
     <div className="divide-y divide-black/[0.06]" aria-hidden="true">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex items-center gap-4 px-5 py-4">
-          <div className="size-10 animate-pulse rounded-[0.65rem] bg-muted" />
+          <div className="skeleton size-10 rounded-[0.65rem]" />
           <div className="flex-1 space-y-2">
-            <div className="h-3 w-1/3 animate-pulse rounded-full bg-muted" />
-            <div className="h-2.5 w-1/2 animate-pulse rounded-full bg-muted" />
+            <div className="skeleton h-3 w-1/3 rounded-full" />
+            <div className="skeleton h-2.5 w-1/2 rounded-full" />
           </div>
-          <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
+          <div className="skeleton h-6 w-20 rounded-full" />
         </div>
       ))}
     </div>
   );
+}
+
+// Animates a number from its previous value to `value` (ease-out, ~0.8s). Text only, no layout work.
+export function CountUp({ value = 0, format = (n) => n.toLocaleString(), duration = 800 }) {
+  const target = Number(value) || 0;
+  const [display, setDisplay] = useState(target);
+  const from = useRef(0);
+
+  useEffect(() => {
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const start = from.current;
+    from.current = target;
+    if (reduce || start === target) {
+      setDisplay(target);
+      return undefined;
+    }
+    let frame;
+    const t0 = performance.now();
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(start + (target - start) * eased));
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, duration]);
+
+  return <span className="tabular-nums">{format(display)}</span>;
 }
 
 /* ------------------------------------------------------------------ */

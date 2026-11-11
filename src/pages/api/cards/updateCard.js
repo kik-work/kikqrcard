@@ -1,7 +1,10 @@
 import { ObjectId } from "mongodb";
 import clientPromise from "../../../../lib/mongodb/config";
 import { requireUser } from "../../../../lib/userAuth";
+import { parseCardBody } from "../../../../lib/cardFields";
 
+// PUT: edit a saved card in place. The card keeps its _id, so its QR link
+// (/c/<id>) stays the same and immediately shows the new details.
 export default async function handler(req, res) {
   if (req.method !== "PUT") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -11,63 +14,23 @@ export default async function handler(req, res) {
   if (!session) return;
   const email = session.user.email;
 
-  const {
-    id,
-    cardName,
-    name,
-    profession,
-    phone,
-    quote,
-    contactEmail,
-    website,
-    address,
-    bgGrad,
-    bgStyle,
-    pattern,
-  } = req.body;
-
-  if (
-    !id ||
-    !email ||
-    !cardName ||
-    !name ||
-    !profession ||
-    !phone ||
-    !quote ||
-    !bgGrad ||
-    !bgStyle
-  ) {
-    return res.status(400).json({ error: "Missing required card fields" });
+  const { id } = req.body;
+  if (!id || !ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid card id" });
   }
 
-  if (!ObjectId.isValid(id)) {
-    return res.status(400).json({ error: "Invalid card id" });
+  const { card, error } = parseCardBody(req.body);
+  if (error) {
+    return res.status(400).json({ error });
   }
 
   try {
     const client = await clientPromise;
-    const db = client.db("kikqrcard");
-    const cards = db.collection("myCard");
-
-    const normalizedCardName = cardName.toLowerCase();
+    const cards = client.db("kikqrcard").collection("myCard");
 
     const result = await cards.updateOne(
       { _id: new ObjectId(id), email },
-      {
-        $set: {
-          cardName: normalizedCardName,
-          name,
-          profession,
-          phone,
-          quote,
-          contactEmail: contactEmail || "",
-          website: website || "",
-          address: address || "",
-          bgGrad,
-          bgStyle,
-          pattern: pattern || "none",
-        },
-      },
+      { $set: { ...card, updatedAt: new Date() } },
     );
 
     if (result.matchedCount === 0) {

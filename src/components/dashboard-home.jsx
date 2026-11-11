@@ -9,6 +9,8 @@ import {
   Package,
   Pencil,
   Plus,
+  QrCode,
+  CreditCard,
   Sparkles,
   Star,
   WalletCards,
@@ -17,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
 import { CardCollection } from "@/components/card-collection";
 import {
+  CountUp,
   IconTile,
   Meter,
   PageHeader,
@@ -33,6 +36,13 @@ const STATS = [
   { key: "favourite", label: "Favourites", icon: Star, tone: "orange", href: "/cards/favourites" },
   { key: "loved", label: "Loved", icon: Heart, tone: "pink", href: "/cards/loved" },
   { key: "orders", label: "Orders this month", icon: Package, tone: "green", href: "/payment/orders" },
+];
+
+const QUICK_ACTIONS = [
+  { label: "Design a card", hint: "Templates or from scratch", icon: Plus, tone: "indigo", href: "/cards/createcard" },
+  { label: "Configure QR", hint: "Links shown after a scan", icon: QrCode, tone: "teal", href: "/cards/qrconfig" },
+  { label: "Order printed card", hint: "Delivered to your door", icon: Package, tone: "green", href: "/payment/orders" },
+  { label: "Plans & billing", hint: "Limits and upgrades", icon: CreditCard, tone: "orange", href: "/payment/billings" },
 ];
 
 const getJson = (url) =>
@@ -58,8 +68,8 @@ function UsageBlock({ label, used, total, emptyText, loading }) {
     return (
       <div aria-hidden="true">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <div className="mt-2 h-9 w-24 animate-pulse rounded-lg bg-muted" />
-        <div className="mt-3 h-2 w-full animate-pulse rounded-full bg-muted" />
+        <div className="skeleton mt-2 h-9 w-24 rounded-lg" />
+        <div className="skeleton mt-3 h-2 w-full rounded-full" />
       </div>
     );
   }
@@ -69,7 +79,7 @@ function UsageBlock({ label, used, total, emptyText, loading }) {
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <p className="mt-1 flex items-baseline gap-1.5">
         <span className="text-3xl font-semibold tabular-nums tracking-[-0.03em] text-foreground">
-          {hasLimit ? used : "—"}
+          {hasLimit ? <CountUp value={used} /> : "—"}
         </span>
         <span className="text-sm text-muted-foreground">
           {hasLimit ? `of ${total} used` : emptyText}
@@ -176,7 +186,8 @@ export function DashboardHome() {
       />
 
       {!loading && counts.saved === 0 && (
-        <Surface className="relative overflow-hidden bg-gradient-to-br from-ios-indigo via-ios-indigo to-ios-blue p-6 text-white sm:p-8">
+        <Surface className="relative animate-fade-up overflow-hidden bg-gradient-to-br from-ios-indigo via-ios-indigo to-ios-blue p-6 text-white sm:p-8">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-grid-dark opacity-60" />
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-white/10 blur-2xl"
@@ -205,28 +216,52 @@ export function DashboardHome() {
 
       {/* activity */}
       <section aria-label="Activity" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {STATS.map(({ key, label, icon, tone, href }) => (
+        {STATS.map(({ key, label, icon, tone, href }, i) => (
           <Link
             key={key}
             href={href}
-            className="group rounded-[1.25rem] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            style={{ animationDelay: `${80 + i * 60}ms` }}
+            className="group animate-fade-up rounded-[1.25rem] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <Surface className="flex h-full flex-col gap-4 p-4 transition-all duration-300 ease-apple group-hover:-translate-y-0.5 group-hover:shadow-lift sm:p-5">
+            <Surface className="relative flex h-full flex-col gap-4 overflow-hidden p-4 transition-[transform,box-shadow] duration-300 ease-apple group-hover:-translate-y-1 group-hover:shadow-lift sm:p-5">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-8 -top-8 size-24 rounded-full bg-primary/[0.07] opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"
+              />
               <div className="flex items-center justify-between">
-                <IconTile icon={icon} tone={tone} />
-                <ArrowUpRight className="size-4 text-muted-foreground/50 transition-colors group-hover:text-muted-foreground" />
+                <IconTile icon={icon} tone={tone} className="transition-transform duration-300 ease-out-expo group-hover:scale-110" />
+                <ArrowUpRight className="size-4 text-muted-foreground/50 transition-[color,transform] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
               </div>
               <div>
                 {loading ? (
-                  <div className="h-8 w-10 animate-pulse rounded-lg bg-muted" />
+                  <div className="skeleton h-8 w-10 rounded-lg" />
                 ) : (
-                  <p className="text-3xl font-semibold tabular-nums tracking-[-0.03em] text-foreground">
-                    {counts[key]}
+                  <p className="text-3xl font-semibold tracking-[-0.03em] text-foreground">
+                    <CountUp value={counts[key]} />
                   </p>
                 )}
                 <p className="mt-0.5 text-sm text-muted-foreground">{label}</p>
               </div>
             </Surface>
+          </Link>
+        ))}
+      </section>
+
+      {/* quick actions */}
+      <section aria-label="Quick actions" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {QUICK_ACTIONS.map(({ label, hint, icon, tone, href }, i) => (
+          <Link
+            key={href}
+            href={href}
+            style={{ animationDelay: `${320 + i * 60}ms` }}
+            className="group flex animate-fade-up items-center gap-3 rounded-2xl border border-black/[0.06] bg-card/60 p-3 outline-none transition-[background-color,box-shadow,transform] duration-300 ease-apple hover:-translate-y-0.5 hover:bg-card hover:shadow-card focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <IconTile icon={icon} tone={tone} size="sm" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-foreground">{label}</span>
+              <span className="block truncate text-xs text-muted-foreground">{hint}</span>
+            </span>
+            <ArrowRight className="size-4 shrink-0 text-muted-foreground/40 transition-[color,transform] duration-300 group-hover:translate-x-0.5 group-hover:text-primary" />
           </Link>
         ))}
       </section>
@@ -248,8 +283,8 @@ export function DashboardHome() {
                 </div>
               ) : (
                 <div className="space-y-2" aria-hidden="true">
-                  <div className="h-4 w-32 animate-pulse rounded-full bg-muted" />
-                  <div className="h-3 w-44 animate-pulse rounded-full bg-muted" />
+                  <div className="skeleton h-4 w-32 rounded-full" />
+                  <div className="skeleton h-3 w-44 rounded-full" />
                 </div>
               )}
             </div>

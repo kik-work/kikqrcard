@@ -1,92 +1,132 @@
 import { forwardRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Briefcase,
+  Camera,
+  GraduationCap,
+  Leaf,
+  Lock,
+  PenLine,
+  QrCode,
+  RefreshCw,
+  Share2,
+  Smartphone,
+  Sparkles,
+  Store,
+  Target,
+  Telescope,
+  UserRound,
+  Zap,
+} from "lucide-react";
+import { Reveal } from "@/components/reveal";
+import { SectionIntro } from "@/components/sections/section-intro";
+
+const STEPS = [
+  { icon: PenLine, title: "Create your card", desc: "Add your contact details, links and branding, then pick a design." },
+  { icon: QrCode, title: "Get your smart QR", desc: "We generate a unique QR that always points to your latest profile." },
+  { icon: Share2, title: "Share anywhere", desc: "Print it, show it on your phone or send the link. People save you in one tap." },
+];
 
 const WHY_CHOOSE = [
-  { title: "Easy to Update", desc: "Edit your info anytime, instantly reflected in your card." },
-  { title: "Instant Sharing", desc: "Just scan and connect, no app required." },
-  { title: "Eco-Friendly", desc: "Ditch paper and go digital for a greener world." },
-  { title: "Professional Design", desc: "Sleek layout tailored for business presentation." },
-  { title: "Secure", desc: "You control your data and what others see." },
-  { title: "Mobile Ready", desc: "Optimized for all devices and screens." },
+  { icon: RefreshCw, title: "Easy to update", desc: "Edit your info anytime; the change is live instantly." },
+  { icon: Zap, title: "Instant sharing", desc: "Just scan and connect. No app required." },
+  { icon: Leaf, title: "Eco-friendly", desc: "One card replaces boxes of paper ones." },
+  { icon: Sparkles, title: "Professional design", desc: "Sleek layouts made for business." },
+  { icon: Lock, title: "You're in control", desc: "Choose exactly what others can see." },
+  { icon: Smartphone, title: "Mobile ready", desc: "Looks great on every screen." },
+];
+
+const AUDIENCE = [
+  { icon: Briefcase, label: "Professionals" },
+  { icon: Store, label: "Business owners" },
+  { icon: UserRound, label: "Freelancers" },
+  { icon: Camera, label: "Creators" },
+  { icon: GraduationCap, label: "Students" },
 ];
 
 const Blog = forwardRef((props, ref) => {
-  const { homeref } = props;
-
   return (
-    <section ref={ref} id="blog" className="w-full py-20 sm:py-28">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Connecting People, One Scan at a Time
-          </span>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            About KIK QRcards.
-          </h2>
+    <section ref={ref} id="blog" className="relative w-full py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionIntro
+          eyebrow="How it works"
+          title="From sign-up to first scan in under a minute."
+          description="KIK QRcard links a dynamic QR code to your customizable profile, so you share your contact, portfolio and business instantly — no apps or paper needed."
+        />
+
+        {/* steps */}
+        <div className="relative mt-16">
+        <div aria-hidden className="absolute left-[16.6%] right-[16.6%] top-9 hidden h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent md:block" />
+        <ol className="relative grid grid-cols-1 gap-6 md:grid-cols-3">
+          {STEPS.map(({ icon: Icon, title, desc }, i) => (
+            <Reveal as="li" key={title} delay={i * 120} className="relative flex flex-col items-center text-center">
+              <div className="relative flex size-[4.5rem] items-center justify-center rounded-3xl bg-gradient-to-br from-primary to-brand-deep text-white shadow-glow">
+                <Icon className="size-7" />
+                <span className="absolute -right-2 -top-2 flex size-7 items-center justify-center rounded-full bg-white text-xs font-extrabold text-primary shadow-md ring-1 ring-primary/15">
+                  {i + 1}
+                </span>
+              </div>
+              <h3 className="mt-6 text-lg font-bold tracking-tight text-ink">{title}</h3>
+              <p className="mt-2 max-w-xs text-[0.95rem] leading-relaxed text-muted-foreground">{desc}</p>
+            </Reveal>
+          ))}
+        </ol>
         </div>
 
-        <div className="flex flex-col gap-14">
-          <div>
-            <h3 className="mb-3 text-xl font-semibold text-foreground">How KIK QRcards Works?</h3>
-            <ol className="list-inside list-decimal space-y-2 text-muted-foreground">
-              <li>Create your digital card with your contact and branding.</li>
-              <li>Generate and customize your unique QR code.</li>
-              <li>Share the QR to let others view your profile instantly.</li>
-            </ol>
-          </div>
-
-          <div>
-            <h3 className="mb-3 text-xl font-semibold text-foreground">What is KIK QRcard?</h3>
-            <p className="leading-relaxed text-muted-foreground">
-              KIK QR Card is a digital card solution that generates a dynamic QR code linked to
-              your customizable profile. Share your contact, portfolio, and business information
-              instantly — no apps or paper needed.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="mb-6 text-xl font-semibold text-foreground">Why Choose KIK QRcard?</h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {WHY_CHOOSE.map((item) => (
-                <Card key={item.title} className="border-border/60">
-                  <CardContent className="pt-6">
-                    <h4 className="font-semibold text-foreground">{item.title}</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">{item.desc}</p>
-                  </CardContent>
-                </Card>
-              ))}
+        {/* why + who */}
+        <div className="mt-24 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <Reveal className="lg:col-span-2">
+            <div className="h-full rounded-[1.75rem] border border-border/70 bg-card p-7 shadow-card sm:p-9">
+              <h3 className="text-2xl font-bold tracking-tight text-ink">Why choose KIK QRcard?</h3>
+              <div className="mt-7 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                {WHY_CHOOSE.map(({ icon: Icon, title, desc }) => (
+                  <div key={title} className="flex gap-4">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="size-5" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-foreground">{title}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </Reveal>
 
-          <div>
-            <h3 className="mb-3 text-xl font-semibold text-foreground">Who Is It For?</h3>
-            <p className="leading-relaxed text-muted-foreground">
-              Freelancers, business professionals, students, creators, and anyone who wants to
-              network smarter and faster.
-            </p>
-          </div>
+          <Reveal delay={120}>
+            <div className="flex h-full flex-col rounded-[1.75rem] bg-gradient-to-br from-primary to-brand-deep p-7 text-white shadow-glow sm:p-9">
+              <h3 className="text-2xl font-bold tracking-tight">Who is it for?</h3>
+              <p className="mt-2 text-white/75">Anyone who wants to network smarter and faster.</p>
+              <ul className="mt-7 flex flex-wrap gap-2">
+                {AUDIENCE.map(({ icon: Icon, label }) => (
+                  <li key={label} className="flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-2 text-sm font-semibold ring-1 ring-white/20 backdrop-blur">
+                    <Icon className="size-4" />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+        </div>
 
-          <div>
-            <h3 className="mb-3 text-xl font-semibold text-foreground">Our Mission &amp; Vision</h3>
-            <p className="leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Mission:</strong> To simplify how people connect
-              and share information through innovative digital tools.
-            </p>
-            <p className="mt-2 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Vision:</strong> To become the go-to digital card
-              platform for professionals around the world.
-            </p>
-          </div>
-
-          <div className="flex justify-center">
-            <Button
-              size="lg"
-              onClick={() => homeref?.current?.scrollIntoView({ behavior: "smooth" })}
-            >
-              Let&apos;s Start!
-            </Button>
-          </div>
+        {/* mission + vision */}
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+          {[
+            { icon: Target, title: "Our mission", text: "To simplify how people connect and share information through innovative digital tools." },
+            { icon: Telescope, title: "Our vision", text: "To become the go-to digital card platform for professionals around the world." },
+          ].map(({ icon: Icon, title, text }, i) => (
+            <Reveal key={title} delay={i * 100}>
+              <div className="flex h-full gap-5 rounded-[1.75rem] border border-border/70 bg-card p-7 shadow-card">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-ink text-white">
+                  <Icon className="size-5" />
+                </span>
+                <div>
+                  <h3 className="text-lg font-bold tracking-tight text-ink">{title}</h3>
+                  <p className="mt-1.5 leading-relaxed text-muted-foreground">{text}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>

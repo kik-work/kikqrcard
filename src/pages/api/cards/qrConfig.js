@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
     const result = await cards.updateOne(
       { _id: new ObjectId(id), email },
-      { $set: { qrConfig: { links: links.map(cleanQrLink) } } },
+      { $set: { qrConfig: { links: links.map(cleanQrLink) }, updatedAt: new Date() } },
     );
 
     if (result.matchedCount === 0) {

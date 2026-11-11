@@ -22,6 +22,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PLANS } from "@/../lib/bkash/plans";
 
+// "manual" (default): plan requests go to the owner on WhatsApp/email and are approved by hand.
+// Set NEXT_PUBLIC_PAYMENT_MODE=bkash once a bKash merchant account is configured.
+const MANUAL_PAYMENTS = process.env.NEXT_PUBLIC_PAYMENT_MODE !== "bkash";
+
 const PLAN_DISPLAY = {
   personal: {
     id: "personal",
@@ -117,8 +121,32 @@ const Billings = () => {
     if (email) fetchHistory(email);
   }, [paymentStatus, trxID]);
 
+  // No merchant account yet: save a plan request, alert the owner and open WhatsApp
+  // so the customer can pay by bKash / Nagad. The owner activates the plan from /admin/payments.
+  const handleManualRequest = async () => {
+    setLoading(true);
+    setPayingPlan(selectedPlan);
+    try {
+      const { data } = await axios.post("/api/payment/plans/request", { planId: selectedPlan });
+      toast.success(
+        data.alreadyPending
+          ? `Your request ${data.invoiceNumber} is already waiting for approval.`
+          : `Request ${data.invoiceNumber} sent. We will activate your plan after payment.`,
+      );
+      if (data.whatsappUrl) window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
+      const email = session?.user?.email;
+      if (email) fetchHistory(email);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to send plan request.");
+    } finally {
+      setLoading(false);
+      setPayingPlan(null);
+    }
+  };
+
   const handlePay = async () => {
     if (!selectedPlan) return;
+    if (MANUAL_PAYMENTS) return handleManualRequest();
     setLoading(true);
     setPayingPlan(selectedPlan);
     try {
@@ -265,8 +293,11 @@ const Billings = () => {
               >
                 {loading && payingPlan === activePlan.id ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" /> Redirecting to bKash…
+                    <Loader2 className="size-4 animate-spin" />
+                    {MANUAL_PAYMENTS ? "Sending request…" : "Redirecting to bKash…"}
                   </>
+                ) : MANUAL_PAYMENTS ? (
+                  "Request plan on WhatsApp"
                 ) : (
                   "Pay with bKash"
                 )}
@@ -293,7 +324,7 @@ const Billings = () => {
               <HistoryList>
                 {payments.map((p) => (
                   <HistoryRow
-                    key={p.paymentID}
+                    key={p._id || p.paymentID}
                     icon={Receipt}
                     title={`${p.planName} plan`}
                     subtitle={`${p.invoiceNumber} · ${formatDate(p.createdAt)}`}

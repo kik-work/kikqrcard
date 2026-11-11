@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
-import AdminShell from "@/components/admin-shell";
+import { AdminLayout } from "@/components/admin-shell";
 import BusinessCard, { CARD_PATTERNS } from "@/components/business-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -163,22 +163,11 @@ function AdminCardTemplates() {
 
   const previewGradient = GRADIENT_OPTIONS[form.gradientIndex];
 
-  if (!ready) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center gap-3">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Checking session...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="md:pl-64">
-      <AdminShell />
-      <main className="p-4 sm:p-6 lg:p-8">
+    <AdminLayout title="Card Designs" ready={ready}>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Card Designs</h1>
+            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.025em] text-foreground sm:text-[2.125rem]">Card Designs</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Manage the design catalog shown on the public cards page.
             </p>
@@ -308,7 +297,7 @@ function AdminCardTemplates() {
           </Dialog>
         </div>
 
-        <div className="mt-6 rounded-lg border border-border">
+        <div className="mt-6 overflow-hidden rounded-[1.25rem] bg-card shadow-card [&_tbody_tr]:transition-colors [&_td]:px-4 [&_td]:py-3 [&_th]:h-11 [&_th]:px-4 [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-muted-foreground [&_thead]:bg-black/[0.025]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -375,8 +364,7 @@ function AdminCardTemplates() {
             </TableBody>
           </Table>
         </div>
-      </main>
-    </div>
+    </AdminLayout>
   );
 }
 

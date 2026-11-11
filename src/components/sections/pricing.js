@@ -1,14 +1,14 @@
 import { forwardRef } from "react";
-import { useRouter } from "next/router";
-import { Check, X } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { ArrowRight, Check, Minus, ShieldCheck, Sparkles } from "lucide-react";
+import { Reveal } from "@/components/reveal";
+import { SectionIntro } from "@/components/sections/section-intro";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FREE_TIER, PLANS } from "@/../lib/bkash/plans";
 
 const formatBdt = (amount) => `৳${Number(amount).toLocaleString("en-US")}`;
-const CYCLE_LABEL = { monthly: "/ month", yearly: "/ year" };
+const CYCLE_LABEL = { monthly: "/month", yearly: "/year" };
 const { personal, business } = PLANS;
 
 const TIERS = [
@@ -16,7 +16,7 @@ const TIERS = [
     name: "Discover",
     price: "Free",
     cadence: "forever",
-    description: "Try a digital QR card with no cost, no time limit.",
+    description: "Try a digital QR card with no cost and no time limit.",
     featured: false,
     features: [
       { label: `${FREE_TIER.virtualCardLimit} virtual card`, included: true },
@@ -26,7 +26,7 @@ const TIERS = [
       { label: "Monthly physical card orders", included: false },
       { label: "Priority support", included: false },
     ],
-    actions: [{ label: "Sign up", href: "/authentication/signup", variant: "default" }],
+    cta: { label: "Start for free", href: "/authentication/signup" },
   },
   {
     name: personal.name,
@@ -42,10 +42,7 @@ const TIERS = [
       { label: `${personal.cardOrderQuota} physical card orders / month`, included: true },
       { label: "Priority support", included: false },
     ],
-    actions: [
-      { label: "Purchase", href: "/payment/billings?plan=personal", variant: "default" },
-      { label: "Sign up", href: "/authentication/signup", variant: "outline" },
-    ],
+    cta: { label: `Get ${personal.name}`, href: "/payment/billings?plan=personal" },
   },
   {
     name: business.name,
@@ -56,95 +53,134 @@ const TIERS = [
     features: [
       { label: `Up to ${business.virtualCardLimit} virtual cards`, included: true },
       { label: "QR contact sharing", included: true },
-      { label: "Custom QR config / card", included: true },
+      { label: "Custom QR config per card", included: true },
       { label: "First physical card free", included: true },
       { label: `10–${business.cardOrderQuota} physical card orders / month`, included: true },
       { label: "Priority support", included: true },
     ],
-    actions: [
-      { label: "Purchase", href: "/payment/billings?plan=business", variant: "default" },
-      { label: "Sign up", href: "/authentication/signup", variant: "outline" },
-    ],
+    cta: { label: `Get ${business.name}`, href: "/payment/billings?plan=business" },
   },
 ];
 
 function PricingCard({ tier }) {
-  const router = useRouter();
+  const dark = tier.featured;
 
   return (
-    <div className={cn("relative", tier.featured && "pt-3")}>
-      {tier.featured && (
-        <Badge className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          Most popular
-        </Badge>
+    <article
+      className={cn(
+        "relative flex h-full flex-col rounded-[1.75rem] p-7 transition-[transform,box-shadow] duration-500 ease-out-expo hover:-translate-y-1.5 sm:p-8",
+        dark
+          ? "bg-ink text-white shadow-[0_30px_80px_-24px_rgb(91_79_214/0.55)] ring-1 ring-white/10"
+          : "border border-border/70 bg-card shadow-card hover:shadow-float",
       )}
-      <Card
-        className={cn(
-          "relative flex flex-col border-border/60 transition-all duration-300 hover:-translate-y-1",
-          tier.featured && "border-primary shadow-lg ring-1 ring-primary/30",
-        )}
-      >
-        <CardHeader className="gap-3">
-          <Badge variant="secondary" className="w-fit">
-            KIK QRcard
-          </Badge>
-          <h3 className="text-lg font-bold text-foreground">{tier.name}</h3>
-          <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-bold text-foreground">{tier.price}</span>
-            <span className="text-sm text-muted-foreground">{tier.cadence}</span>
+    >
+      {dark && (
+        <>
+          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
+            <div className="absolute inset-0 bg-grid-dark opacity-70" />
+            <div className="absolute -right-24 -top-24 size-72 rounded-full bg-primary/45 blur-3xl" />
           </div>
-          <p className="text-sm text-muted-foreground">{tier.description}</p>
-        </CardHeader>
-        <CardContent className="flex flex-1 flex-col gap-6">
-          <ul className="flex flex-col gap-2.5">
-            {tier.features.map((feature) => (
-              <li key={feature.label} className="flex items-center gap-2.5 text-sm">
-                {feature.included ? (
-                  <Check className="size-4 shrink-0 text-primary" />
-                ) : (
-                  <X className="size-4 shrink-0 text-muted-foreground/50" />
-                )}
-                <span className={cn(!feature.included && "text-muted-foreground/60")}>
-                  {feature.label}
+          <span className="absolute -top-3.5 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-[#c084fc] px-3.5 py-1 text-xs font-bold text-white shadow-glow">
+            <Sparkles className="size-3.5" />
+            Most popular
+          </span>
+        </>
+      )}
+
+      <div className="relative flex flex-1 flex-col">
+        <h3 className={cn("text-sm font-bold uppercase tracking-[0.16em]", dark ? "text-primary" : "text-muted-foreground")}>
+          {tier.name}
+        </h3>
+        <div className="mt-4 flex items-baseline gap-1.5">
+          <span className={cn("text-5xl font-extrabold tracking-[-0.04em] tabular-nums", dark ? "text-white" : "text-ink")}>
+            {tier.price}
+          </span>
+          <span className={cn("text-sm font-medium", dark ? "text-white/55" : "text-muted-foreground")}>{tier.cadence}</span>
+        </div>
+        <p className={cn("mt-3 text-[0.95rem]", dark ? "text-white/65" : "text-muted-foreground")}>{tier.description}</p>
+
+        <Link
+          href={tier.cta.href}
+          className={cn(
+            buttonVariants({ size: "lg" }),
+            "group mt-7 h-12 w-full rounded-full text-[0.95rem]",
+            dark
+              ? "bg-white text-ink hover:bg-white/90"
+              : "bg-ink text-white hover:bg-ink/85",
+          )}
+        >
+          {tier.cta.label}
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+
+        <div className={cn("my-7 h-px", dark ? "bg-white/10" : "bg-border")} />
+
+        <ul className="flex flex-col gap-3.5">
+          {tier.features.map((feature) => (
+            <li key={feature.label} className="flex items-start gap-3 text-sm">
+              {feature.included ? (
+                <span
+                  className={cn(
+                    "mt-px flex size-5 shrink-0 items-center justify-center rounded-full",
+                    dark ? "bg-primary text-white" : "bg-primary/10 text-primary",
+                  )}
+                >
+                  <Check className="size-3" strokeWidth={3} />
                 </span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-auto flex flex-col gap-2">
-            {tier.actions.map((action) => (
-              <Button
-                key={action.label}
-                variant={action.variant}
-                onClick={() => router.push(action.href)}
+              ) : (
+                <span className={cn("mt-px flex size-5 shrink-0 items-center justify-center rounded-full", dark ? "bg-white/10 text-white/40" : "bg-muted text-muted-foreground/60")}>
+                  <Minus className="size-3" strokeWidth={3} />
+                </span>
+              )}
+              <span
+                className={cn(
+                  feature.included
+                    ? dark
+                      ? "text-white/90"
+                      : "text-foreground"
+                    : dark
+                      ? "text-white/40"
+                      : "text-muted-foreground/70",
+                )}
               >
-                {action.label}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                {feature.label}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </article>
   );
 }
 
 const Pricing = forwardRef((props, ref) => {
   return (
-    <section ref={ref} id="pricing" className="w-full py-20 sm:py-28">
+    <section ref={ref} id="pricing" className="relative w-full py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Simple pricing in BDT
-          </span>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Explore Our QRcard Plans and Choose Yours
-          </h2>
-        </div>
+        <SectionIntro
+          eyebrow="Pricing"
+          title="Simple plans in BDT. Start free."
+          description="Upgrade only when you need more cards or monthly printed orders. No hidden fees."
+        />
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {TIERS.map((tier) => (
-            <PricingCard key={tier.name} tier={tier} />
+        <div className="mt-16 grid grid-cols-1 items-stretch gap-6 md:grid-cols-3 lg:gap-8">
+          {TIERS.map((tier, i) => (
+            <Reveal key={tier.name} delay={i * 100} className={cn(tier.featured && "md:-my-4")}>
+              <PricingCard tier={tier} />
+            </Reveal>
           ))}
         </div>
+
+        <Reveal className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <ShieldCheck className="size-4 text-success" />
+            No setup fees
+          </span>
+          <span className="flex items-center gap-2">
+            <Check className="size-4 text-success" />
+            Your first physical card is free
+          </span>
+        </Reveal>
       </div>
     </section>
   );

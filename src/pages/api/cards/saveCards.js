@@ -1,6 +1,7 @@
 import clientPromise from "../../../../lib/mongodb/config";
 import { requireUser } from "../../../../lib/userAuth";
 import { getPlan, FREE_TIER } from "../../../../lib/bkash/plans";
+import { parseCardBody, duplicateQuery } from "../../../../lib/cardFields";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,33 +12,9 @@ export default async function handler(req, res) {
   if (!session) return;
   const email = session.user.email;
 
-  const {
-    cardName,
-    name,
-    profession,
-    phone,
-    quote,
-    contactEmail,
-    website,
-    address,
-    bgGrad,
-    bgStyle,
-    pattern,
-    savedCard,
-  } = req.body;
-
-  if (
-    !email ||
-    !cardName ||
-    !name ||
-    !profession ||
-    !phone ||
-    !quote ||
-    !bgGrad ||
-    !bgStyle ||
-    savedCard === undefined
-  ) {
-    return res.status(400).json({ error: "Missing required card fields" });
+  const { card, error } = parseCardBody(req.body);
+  if (error) {
+    return res.status(400).json({ error });
   }
 
   try {
@@ -46,17 +23,7 @@ export default async function handler(req, res) {
     const cards = db.collection("myCard");
     const users = db.collection("users");
 
-    // Normalize cardName for consistent storage and lookup
-    const normalizedCardName = cardName.toLowerCase();
-
-    const existingCard = await cards.findOne({
-      email,
-      cardName: normalizedCardName,
-      bgGrad,
-      bgStyle,
-    });
-
-    if (existingCard) {
+    if (await cards.findOne(duplicateQuery(email, card))) {
       return res.status(409).json({ error: "Card already exists" });
     }
 
@@ -71,33 +38,19 @@ export default async function handler(req, res) {
       });
     }
 
-    const newCard = {
+    const now = new Date();
+    const result = await cards.insertOne({
       email,
-      cardName: normalizedCardName,
-      name,
-      profession,
-      phone,
-      quote,
-      contactEmail: contactEmail || "",
-      website: website || "",
-      address: address || "",
-      bgGrad,
-      bgStyle,
-      pattern: pattern || "none",
-      savedCard,
-      createdAt: new Date(),
-    };
+      ...card,
+      savedCard: true,
+      createdAt: now,
+      updatedAt: now,
+    });
 
-    const result = await cards.insertOne(newCard);
-
-    if (result.insertedId) {
-      return res.status(201).json({
-        message: "Card saved successfully",
-        id: result.insertedId.toString(),
-      });
-    } else {
-      throw new Error("Insert failed");
-    }
+    return res.status(201).json({
+      message: "Card saved successfully",
+      id: result.insertedId.toString(),
+    });
   } catch (err) {
     console.error("Card save error:", err);
     return res.status(500).json({ error: "Internal Server Error" });

@@ -13,6 +13,8 @@ import {
   LogOut,
   Plus,
   Menu,
+  Sparkles,
+  ArrowUpRight,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Seo } from "@/components/seo";
@@ -93,9 +95,12 @@ function NavList({ pathname, onNavigate }) {
       <Link
         href="/cards/createcard"
         onClick={onNavigate}
-        className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        className={cn(
+          buttonVariants({ size: "lg" }),
+          "group w-full shadow-[0_8px_20px_-8px_rgb(88_86_214/0.65)] hover:bg-primary hover:brightness-110",
+        )}
       >
-        <Plus className="size-4" />
+        <Plus className="size-4 transition-transform duration-300 ease-out-expo group-hover:rotate-90" />
         New card
       </Link>
 
@@ -115,14 +120,24 @@ function NavList({ pathname, onNavigate }) {
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.9375rem] font-medium outline-none transition-colors duration-150 focus-visible:ring-3 focus-visible:ring-ring/40",
+                    "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.9375rem] font-medium outline-none transition-colors duration-200 focus-visible:ring-3 focus-visible:ring-ring/40",
                     active
-                      ? "bg-black/[0.07] text-foreground"
+                      ? "bg-primary/[0.09] text-foreground"
                       : "text-foreground/70 hover:bg-black/[0.045] hover:text-foreground",
                   )}
                 >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary transition-[opacity,transform] duration-300 ease-out-expo",
+                      active ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0",
+                    )}
+                  />
                   <Icon
-                    className={cn("size-[1.15rem]", active ? "text-primary" : "text-muted-foreground")}
+                    className={cn(
+                      "size-[1.15rem] transition-transform duration-300 ease-out-expo group-hover:scale-110",
+                      active ? "text-primary" : "text-muted-foreground",
+                    )}
                     strokeWidth={active ? 2.25 : 2}
                   />
                   {item.label}
@@ -132,6 +147,22 @@ function NavList({ pathname, onNavigate }) {
           </div>
         ))}
       </nav>
+
+      {user && !plan && (
+        <Link
+          href="/payment/billings"
+          onClick={onNavigate}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-ios-indigo to-[#8f87f1] p-4 text-white shadow-[0_12px_28px_-14px_rgb(88_86_214/0.8)] outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+        >
+          <span aria-hidden className="absolute -right-6 -top-6 size-20 rounded-full bg-white/15 blur-xl transition-transform duration-500 ease-out-expo group-hover:scale-150" />
+          <span className="relative flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="size-4" />
+            Upgrade your plan
+            <ArrowUpRight className="ml-auto size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </span>
+          <span className="relative mt-1 block text-xs text-white/75">More cards and monthly printed orders.</span>
+        </Link>
+      )}
 
       <div className="space-y-1 border-t border-black/[0.07] pt-4">
         <Link
@@ -195,7 +226,10 @@ function TabBar({ pathname }) {
                 ) : (
                   <>
                     <Icon
-                      className={cn("size-6 transition-colors", active ? "text-primary" : "text-muted-foreground")}
+                      className={cn(
+                        "size-6 transition-[color,transform] duration-300 ease-out-expo group-active:scale-90",
+                        active ? "-translate-y-px text-primary" : "text-muted-foreground",
+                      )}
                       strokeWidth={active ? 2.25 : 1.85}
                     />
                     <span
@@ -270,7 +304,7 @@ export function DashboardLayout({ title, path, width = "max-w-6xl", children }) 
       {title && <Seo title={title} path={path} noIndex />}
       <DashboardShell />
       <main className="md:pl-72">
-        <div className={cn("mx-auto w-full px-4 pb-32 pt-6 sm:px-6 md:pb-14 lg:px-10 lg:pt-10", width)}>
+        <div className={cn("mx-auto w-full animate-page-in px-4 pb-32 pt-6 sm:px-6 md:pb-14 lg:px-10 lg:pt-10", width)}>
           {children}
         </div>
       </main>

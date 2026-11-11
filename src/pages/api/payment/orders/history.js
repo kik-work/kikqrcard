@@ -1,23 +1,22 @@
 import clientPromise from "/lib/mongodb/config";
+import { requireUser } from "@/../lib/userAuth";
 
+// GET: the signed-in user's own physical card orders, newest first.
+// The email always comes from the session, never from the query string.
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email } = req.query;
-
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
-  }
+  const session = await requireUser(req, res);
+  if (!session) return;
 
   try {
     const client = await clientPromise;
-    const db = client.db("kikqrcard");
-
-    const orders = await db
+    const orders = await client
+      .db("kikqrcard")
       .collection("orders")
-      .find({ email })
+      .find({ email: session.user.email }, { projection: { notifications: 0 } })
       .sort({ createdAt: -1 })
       .toArray();
 

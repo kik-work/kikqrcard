@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
-import AdminShell from "@/components/admin-shell";
+import { AdminLayout } from "@/components/admin-shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table,
@@ -17,6 +18,7 @@ import { useRequireAdmin } from "@/lib/useRequireAdmin";
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
+  { value: "pending", label: "Pending approval" },
   { value: "completed", label: "Completed" },
   { value: "initiated", label: "Initiated" },
   { value: "failed", label: "Failed" },
@@ -24,6 +26,7 @@ const STATUS_TABS = [
 ];
 
 const STATUS_VARIANT = {
+  pending: "secondary",
   completed: "default",
   initiated: "outline",
   failed: "destructive",
@@ -54,20 +57,32 @@ function AdminPayments() {
     if (ready) fetchPayments(tab);
   }, [ready, tab, fetchPayments]);
 
-  if (!ready) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center gap-3">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Checking session...</p>
-      </div>
-    );
-  }
+  const [busyId, setBusyId] = useState(null);
+
+  // Manual plan requests: approve after the customer pays on bKash / Nagad.
+  const review = async (payment, action) => {
+    let trxID = "";
+    if (action === "approve") {
+      trxID = window.prompt(`Approve ${payment.planName || payment.planId} for ${payment.email}?\nTransaction ID (optional):`, "");
+      if (trxID === null) return;
+    } else if (!window.confirm(`Reject the plan request from ${payment.email}?`)) {
+      return;
+    }
+    setBusyId(payment._id);
+    try {
+      const { data } = await axios.patch("/api/admin/payments", { id: payment._id, action, trxID });
+      toast.success(data.message);
+      fetchPayments(tab);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to update payment");
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
-    <div className="md:pl-64">
-      <AdminShell />
-      <main className="p-4 sm:p-6 lg:p-8">
-        <h1 className="text-2xl font-bold text-foreground">Payments</h1>
+    <AdminLayout title="Payments" ready={ready}>
+        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.025em] text-foreground sm:text-[2.125rem]">Payments</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {payments.length} payment{payments.length === 1 ? "" : "s"}
         </p>
@@ -82,7 +97,7 @@ function AdminPayments() {
           </TabsList>
 
           <TabsContent value={tab}>
-            <div className="mt-4 rounded-lg border border-border">
+            <div className="mt-4 overflow-hidden rounded-[1.25rem] bg-card shadow-card [&_tbody_tr]:transition-colors [&_td]:px-4 [&_td]:py-3 [&_th]:h-11 [&_th]:px-4 [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-muted-foreground [&_thead]:bg-black/[0.025]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -92,18 +107,19 @@ function AdminPayments() {
                     <TableHead>Trx ID</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         <Loader2 className="mx-auto size-5 animate-spin" />
                       </TableCell>
                     </TableRow>
                   ) : payments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         No payments found.
                       </TableCell>
                     </TableRow>
@@ -122,6 +138,20 @@ function AdminPayments() {
                         <TableCell>
                           {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}
                         </TableCell>
+                        <TableCell className="text-right">
+                          {p.status === "pending" ? (
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" disabled={busyId === p._id} onClick={() => review(p, "approve")}>
+                                Approve
+                              </Button>
+                              <Button size="sm" variant="ghost" disabled={busyId === p._id} onClick={() => review(p, "reject")}>
+                                Reject
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{p.method === "manual" ? "Manual" : "bKash"}</span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -130,8 +160,7 @@ function AdminPayments() {
             </div>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+    </AdminLayout>
   );
 }
 
